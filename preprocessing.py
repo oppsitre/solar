@@ -14,8 +14,10 @@ import pandas as pd
 from skimage import feature
 #from cnn_util import *
 
-image_load_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
-image_save_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
+# raw_image_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+# input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
+raw_image_path = '/media/lcc/Windows/Downloads/SSRL_SKY/'
+input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
 year = range(1999, 2017)
 def preprocess_frame(image, target_height=224, target_width=224):
 
@@ -41,6 +43,68 @@ def preprocess_frame(image, target_height=224, target_width=224):
 
     return cv2.resize(resized_image, (target_height, target_width))
 
+def pad_data(method, feat_size):
+    new_data = []
+    start_day = '20080101'
+    end_day = '20160731'
+    day_list = np.loadtxt('day_list.csv', dtype='str')
+    date = np.loadtxt('exist_image_list.csv', dtype='str')
+    feat = np.loadtxt(input_data_path + 'raw_' + method + '_' + str(feat_size) + '.csv', dtype='float')
+    #data = np.loadtxt(path + method + '.csv', delimiter=',',dtype='str')
+    #date = [str(int(float(i))) for i in data[:,0]]
+    #feat = np.array(data[:,1:], dtype = 'float')
+    #feat = data
+    #feat_size = feat.shape[1]
+    print feat
+    print date
+    print day_list
+    idx = 0
+    for day in day_list:
+        hours = range(0,24)
+        for hour in hours[:5]:
+            if hour < 10:
+                day_hour = day + '0' + str(hour) + '00'
+            else:
+                day_hour = day + str(hour) + '00'
+            if day_hour < start_day:
+                continue
+            if day > end_day:
+                break
+            new_data.append([0] * feat_size)
+        for hour in hours[5:-4]:
+            if hour < 10:
+                day_hour = day + '0' + str(hour) + '00'
+            else:
+                day_hour = day +  str(hour) + '00'
+            if day_hour < start_day:
+                continue
+            if day > end_day:
+                break
+            print 'Day_Hour:', day_hour
+            print 'Idx:', idx
+            print date[idx]
+            while date[idx] < day_hour:
+                idx += 1
+            if date[idx] == day_hour:
+                new_data.append(feat[idx])
+            else:
+                f = np.array([-99999]*feat_size)
+                new_data.append(f)
+        for hour in hours[-4:]:
+            if hour < 10:
+                day_hour = day + '0' + str(hour) + '00'
+            else:
+                day_hour = day + str(hour) + '00'
+            if day_hour < start_day:
+                continue
+            if day > end_day:
+                break
+            new_data.append([0] * feat_size)
+
+    new_data = np.array(new_data)
+    print new_data.shape
+    np.savetxt(input_data_path + method + '_' + str(feat_size) + '.csv', new_data, fmt='%.4f',delimiter=',')
+
 # def prerain_CNN():
 #     vgg_model = '/home/lcc/caffe/models/bvlc_reference_rcnn_ilsvrc13/bvlc_reference_rcnn_ilsvrc13.caffemodel'
 #     vgg_deploy = '/home/lcc/caffe/models/bvlc_reference_rcnn_ilsvrc13/deploy.prototxt'
@@ -53,9 +117,9 @@ def preprocess_frame(image, target_height=224, target_width=224):
 #     cnn = CNN(model=vgg_model, deploy=vgg_deploy, width=width, height=height)
 #     print 'After CNN'
 #     for y in year[::-1]:
-#         print image_load_path + str(y) + '/'
+#         print raw_image_path + str(y) + '/'
 #         feat_list = []
-#         for parent, dirnames, filenames in os.walk(image_load_path+str(y)+'/'):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
+#         for parent, dirnames, filenames in os.walk(raw_image_path+str(y)+'/'):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
 #             for filename in filenames:  # 输出文件信息
 #                 if not filename.endswith('.jpg'):
 #                     continue
@@ -76,7 +140,7 @@ def preprocess_frame(image, target_height=224, target_width=224):
 #                 feat_list.append(feat)
 #         feat_list = np.array(feat_list)
 #         print feat_list.shape
-#         np.savetxt(image_save_path+str(y)+"_rcnnet.csv", feat_list, delimiter=",")
+#         np.savetxt(input_data_path+str(y)+"_rcnnet.csv", feat_list, delimiter=",")
 
 def Dense_sift(img):
     img = cv2.resize(img,(25,25))
@@ -147,9 +211,9 @@ def LBP_feature(img, numPoints = 24, radius = 8):
 def get_feature(method):
     feat_list = []
     for y in year:
-        print image_load_path + str(y) + '/'
+        print raw_image_path + str(y) + '/'
     #    feat_list = []
-        for parent, dirnames, filenames in os.walk(image_load_path + str(y) + '/'):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
+        for parent, dirnames, filenames in os.walk(raw_image_path + str(y) + '/'):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
             for filename in filenames:  # 输出文件信息
                 if not filename.endswith('.jpg'):
                     continue
@@ -160,19 +224,23 @@ def get_feature(method):
                 print filename[:-4]
                 if method == 'HOG':
                     feat = HOG_feature(img)
-		    print type(feat)
-		    print len(feat)
                 elif method == 'LBP':
                     feat = LBP_feature(img)
                 elif method == 'DSIFT':
                     feat = Dense_sift(img)
-                #feat.insert(0, int(filename[:-4]))
+                elif method == 'exist_image':
+                    feat = int(filename[:-4])
                 feat_list.append(feat)
     feat_list = np.array(feat_list)
     print feat_list.shape
-    np.savetxt(image_save_path + 'raw_' + method + '_' + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",")
+
+    np.savetxt(input_data_path + 'raw_' + method + '_' + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",", fmt = '%.4f')
+    #np.savetxt('exist_image_list.csv', feat_list, delimiter=',',fmt = '%12.0f')
+
+
 if __name__=="__main__":
-    get_feature('HOG')
-   # img = cv2.imread(image_load_path + '2016/01/01/201601011000.jpg')
+    #pad_data()
+   get_feature('exist_image')
+   # img = cv2.imread(raw_image_path + '2016/01/01/201601011000.jpg')
    # fea = Dense_sift(img)
    # print len(fea)
