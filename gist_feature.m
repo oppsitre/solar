@@ -2,17 +2,18 @@ clear param
 param.orientationsPerScale = [8 8 8 8]; % number of orientations per scale (from HF to LF)
 param.numberBlocks = 1;
 param.fc_prefilt = 4;
-%load_path = 'rlcc/Windows/Downloads/SSRL_SKY/';
-load_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE'
-save_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/inputdata/'
+load_path = '/media/lcc/Windows/Downloads/SSRL_SKY/';
+save_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/';
+%load_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+%save_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
 file_list = [];
 feat_list = [];
 for y = 1999:2016
     for m = 1:12
         if m < 10
-            month_path = strcat(load_path, int2str(y), '/', '0', int2str(m),'/');
+            month_path = strcat(load_path, int2str(y), '/', '0', int2str(m),'/')
         else
-            month_path = strcat(load_path, int2str(y), '/', int2str(m),'/');
+            month_path = strcat(load_path, int2str(y), '/', int2str(m),'/')
         end
         files = dir(month_path);
         imgDataPath = month_path;
@@ -25,19 +26,20 @@ for y = 1999:2016
             end
             imgDir = dir([imgDataPath imgDataDir(i).name '/*jpg']); 
             for j =1:length(imgDir)                 % 遍历所有图片
-                str = [imgDataPath imgDataDir(i).name '/' imgDir(j).name]
+                str = [imgDataPath imgDataDir(i).name '/' imgDir(j).name];
                 img = imread(str);
                 [gist, param] = LMgist(img, '', param);
                 file_list = [file_list;imgDir(j).name(1:12)];
-                feat_list = [feat_list;gist];
+                %feat_list = [feat_list;gist];
 %                 size(file_list)
 %                 size(feat_list)
             end
         end
     end
 end
-csv.write('exist_file_list.csv', file_list);
-csv.write('GIST.csv', feat_list);
+[row,col] = size(feat_list);
+csvwrite('exist_image_list.csv', file_list);
+%csvwrite(strcat('raw_GIST_',int2str(col),'.csv'), feat_list);
 % 
 % % 计算GIST
 % 
