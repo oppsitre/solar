@@ -112,7 +112,7 @@ def HOG_feature(img):
     img = cv2.resize(gray,(64,128))
     hog = cv2.HOGDescriptor()
     h = hog.compute(img)
-    h = np.reshape(h, (1, h.shape[0]))
+    h = h.ravel()
     return h.tolist()
 
 
@@ -160,6 +160,8 @@ def get_feature(method):
                 print filename[:-4]
                 if method == 'HOG':
                     feat = HOG_feature(img)
+		    print type(feat)
+		    print len(feat)
                 elif method == 'LBP':
                     feat = LBP_feature(img)
                 elif method == 'DSIFT':
@@ -168,7 +170,7 @@ def get_feature(method):
                 feat_list.append(feat)
     feat_list = np.array(feat_list)
     print feat_list.shape
-    np.savetxt(image_save_path + 'raw_' + method + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",")
+    np.savetxt(image_save_path + 'raw_' + method + '_' + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",")
 if __name__=="__main__":
     get_feature('HOG')
    # img = cv2.imread(image_load_path + '2016/01/01/201601011000.jpg')
