@@ -2,7 +2,9 @@ clear param
 param.orientationsPerScale = [8 8 8 8]; % number of orientations per scale (from HF to LF)
 param.numberBlocks = 1;
 param.fc_prefilt = 4;
-load_path = '/media/lcc/Windows/Downloads/SSRL_SKY/';
+%load_path = 'rlcc/Windows/Downloads/SSRL_SKY/';
+load_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE'
+save_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/inputdata/'
 file_list = [];
 feat_list = [];
 for y = 1999:2016
@@ -35,7 +37,7 @@ for y = 1999:2016
     end
 end
 csv.write('exist_file_list.csv', file_list);
-csv.write('feat_list.csv', feat_list);
+csv.write('GIST.csv', feat_list);
 % 
 % % 计算GIST
 % 

@@ -4,16 +4,18 @@ According to the paper, the authors extracted upto 80 frames from each video,
 they did not mention if they grabbed first 80 frames, or sampled 80 frames with same intervals,
 but anyway I did the latter.
 '''
+import sys
+sys.path.append('/usr/local/lib/python2.7/dist-packages')
 import cv2
 import os
 import ipdb
 import numpy as np
 import pandas as pd
 from skimage import feature
-from cnn_util import *
+#from cnn_util import *
 
-image_load_path = '/media/lcc/Windows/Downloads/SSRL_SKY/'
-image_save_path = '/media/lcc/Windows/Downloads/SSRL_SKY/feat/'
+image_load_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+image_save_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
 year = range(1999, 2017)
 def preprocess_frame(image, target_height=224, target_width=224):
 
@@ -143,9 +145,10 @@ def LBP_feature(img, numPoints = 24, radius = 8):
     #print hist.shape
     return hist.tolist()
 def get_feature(method):
-    for y in year[::-1]:
+    feat_list = []
+    for y in year:
         print image_load_path + str(y) + '/'
-        feat_list = []
+    #    feat_list = []
         for parent, dirnames, filenames in os.walk(image_load_path + str(y) + '/'):  # 三个参数：分别返回1.父目录 2.所有文件夹名字（不含路径） 3.所有文件名字
             for filename in filenames:  # 输出文件信息
                 if not filename.endswith('.jpg'):
@@ -163,11 +166,11 @@ def get_feature(method):
                     feat = Dense_sift(img)
                 #feat.insert(0, int(filename[:-4]))
                 feat_list.append(feat)
-        feat_list = np.array(feat_list)
-        print feat_list.shape
-        np.savetxt(image_save_path + method + '/' + str(y) + '_' + method + '.csv', feat_list, delimiter=",")
+    feat_list = np.array(feat_list)
+    print feat_list.shape
+    np.savetxt(image_save_path + 'raw_' + method + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",")
 if __name__=="__main__":
-    #get_feature('LBP')
-    img = cv2.imread(image_load_path + '2016/01/01/201601011000.jpg')
-    fea = Dense_sift(img)
-    print len(fea)
+    get_feature('HOG')
+   # img = cv2.imread(image_load_path + '2016/01/01/201601011000.jpg')
+   # fea = Dense_sift(img)
+   # print len(fea)
