@@ -1,0 +1,14 @@
+SUMMARY
+================================================================================
+
+This is an auto generate file by the pre-process file
+author: WANG Kejie<wang_kejie@foxmail.com>
+Generating time:2016-12-15 13:00:27
+
+
+Dataset Info
+================================================================================
+The excel file is the source dataset and use the preprocess python script to generate the train, validation and test data
+Train set data length: 2978 days / 71472 hours
+Validation set data length: 78 days / 1872 hours
+Test set data length: 79 days / 1896 hours
