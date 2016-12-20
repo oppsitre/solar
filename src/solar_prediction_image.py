@@ -9,10 +9,15 @@ from collections import namedtuple
 from reader_image import Reader
 from model_cnn import Model
 from util import MSE_And_MAE, test_figure_plot
-
+import sys
+import datetime
+import time
+log_file = open('log_'+ str(int(datetime.datetime.now().microsecond)),'w')
+sys.stdout = log_file
 def main(_):
     #get the config
-    fp = open('/home/lcc/code/python/SolarPrediction/config.json')
+    print time.localtime()
+    fp = open('/home/lcc/code/python/solar/config.json')
     config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
     fp.close()
 
@@ -43,18 +48,19 @@ def main(_):
     saver = tf.train.Saver()
 
     validation_last_loss = float('inf')
-
+    print config.test_step
     with tf.Session() as sess:
         # initialize all variables
         tf.initialize_all_variables().run()
 
         for i in range(epoch_size):
-            # test
+            print 'Epoch:', i
+
             if i%config.test_step == 0:
                 sky_cam_test_input, test_target = reader.get_test_set(test_num)
                 test_feed = {x_sky_cam: sky_cam_test_input, keep_prob:1.0}
                 test_result = sess.run(prediction, feed_dict=test_feed)
-
+                #'connected'
                 #calculate the mse and mae
                 mse, mae = MSE_And_MAE(test_target, test_result)
                 print "Test MSE: ", mse
@@ -67,15 +73,13 @@ def main(_):
                 print "Train MSE: ", mse
                 print "Train MAE: ", mae
 
-                # test_figure_plot(test_target, test_result)
 
-            #train
+
             batch = reader.next_batch()
-            #print batch[0].shape
             train_feed = {x_sky_cam: batch[0], y_:batch[1], keep_prob:0.5}
             sess.run(optimize, feed_dict=train_feed)
 
-            #print step
+
             if i%config.print_step == 0:
                 print "train loss:",sess.run(loss, feed_dict=train_feed)
                 print "validation loss: ", validation_last_loss

@@ -14,10 +14,10 @@ import pandas as pd
 from skimage import feature
 #from cnn_util import *
 
-# raw_image_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
-# input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
-raw_image_path = '/media/lcc/Windows/Downloads/SSRL_SKY/'
+raw_image_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
 input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
+#raw_image_path = '/media/lcc/Windows/Downloads/SSRL_SKY/'
+#input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
 year = range(1999, 2017)
 def preprocess_frame(image, target_height=224, target_width=224):
 
@@ -43,13 +43,14 @@ def preprocess_frame(image, target_height=224, target_width=224):
 
     return cv2.resize(resized_image, (target_height, target_width))
 
-def pad_data(method, feat_size):
+def pad_data(method, feat_size, feat=None):
     new_data = []
     start_day = '20080101'
     end_day = '20160731'
     day_list = np.loadtxt('day_list.csv', dtype='str')
     date = np.loadtxt('exist_image_list.csv', dtype='str')
-    feat = np.loadtxt(input_data_path + 'raw_' + method + '_' + str(feat_size) + '.csv', dtype='float')
+	if feat == None
+    	feat = np.loadtxt(input_data_path + 'raw_' + method + '_' + str(feat_size) + '.csv', delimiter=',')
     #data = np.loadtxt(path + method + '.csv', delimiter=',',dtype='str')
     #date = [str(int(float(i))) for i in data[:,0]]
     #feat = np.array(data[:,1:], dtype = 'float')
@@ -235,12 +236,14 @@ def get_feature(method):
     print feat_list.shape
 
     np.savetxt(input_data_path + 'raw_' + method + '_' + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",", fmt = '%.4f')
-    #np.savetxt('exist_image_list.csv', feat_list, delimiter=',',fmt = '%12.0f')
+    pad_data(method, feat_list.shape[1], feat_list)
+	#np.savetxt('exist_image_list.csv', feat_list, delimiter=',',fmt = '%12.0f')
 
 
 if __name__=="__main__":
     #pad_data()
-   get_feature('exist_image')
+   get_feature('LBPco	')
+   pad_data(method = 'HOG', feat_size = 3780)
    # img = cv2.imread(raw_image_path + '2016/01/01/201601011000.jpg')
    # fea = Dense_sift(img)
    # print len(fea)

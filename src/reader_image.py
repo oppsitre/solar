@@ -16,7 +16,8 @@ target_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/val
 sky_cam_test_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
-sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
+#sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
+sky_cam_raw_data_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
 
 class Reader:
 
@@ -89,22 +90,22 @@ class Reader:
         #target reshape: align the target with the input feature
 
         self.sky_cam_train_data = self._feature_reshape(sky_cam_train_raw_data, config.data_step, config.n_step)
-        print 'sky_cam_train_data:', self.sky_cam_train_data.dtype, self.sky_cam_train_data
+        #print 'sky_cam_train_data:', self.sky_cam_train_data.dtype, self.sky_cam_train_data
         self.sky_cam_validation_data = self._feature_reshape(sky_cam_validation_raw_data, config.data_step, config.n_step)
-        print 'sky_cam_validation_data:', self.sky_cam_validation_data.dtype, self.sky_cam_validation_data
+        #print 'sky_cam_validation_data:', self.sky_cam_validation_data.dtype, self.sky_cam_validation_data
         self.sky_cam_test_data = self._feature_reshape(sky_cam_test_raw_data, config.data_step, config.n_step)
-        print 'sky_cam_test_data:', type(self.sky_cam_test_data), self.sky_cam_test_data
+        #print 'sky_cam_test_data:', type(self.sky_cam_test_data), self.sky_cam_test_data
 
         self.target_train_data = self._target_reshape(target_train_raw_data, config.data_step, config.n_step, config.h_ahead, config.n_target)
         self.target_validation_data = self._target_reshape(target_validation_raw_data, config.data_step, config.n_step, config.h_ahead, config.n_target)
         self.target_test_data = self._target_reshape(target_test_raw_data, config.data_step, config.n_step, config.h_ahead, config.n_target)
 
         self.train_index = self._get_valid_index(self.sky_cam_train_data, self.target_train_data)
-        print 'self.train_index:', self.train_index
+        #print 'self.train_index:', self.train_index
         self.validation_index = self._get_valid_index(self.sky_cam_validation_data, self.target_validation_data)
-        print 'validation_index:', self.validation_index
+        #print 'validation_index:', self.validation_index
         self.test_index = self._get_valid_index(self.sky_cam_test_data, self.target_test_data)
-        print 'self.test_index:', self.test_index
+        #print 'self.test_index:', self.test_index
         self.n_step = config.n_step
         self.width = config.width
         self.heigth = config.heigth

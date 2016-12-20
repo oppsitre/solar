@@ -48,7 +48,7 @@ class Model:
         self.target = target
         self.keep_prob = keep_prob
         self.image_data = data[0]
-        self.cnn_feat_size = 10
+        self.cnn_feat_size = config.cnn_feat_size
 
         #the network parameters
         self.n_third_hidden = config.n_third_hidden
@@ -130,7 +130,6 @@ class Model:
         with tf.variable_scope('fc_1') as scope:
             # full connection
             s = h_pool2.get_shape().as_list()
-            print(type(s))
             # print 'X1,X2,X3,X4', x1,x2,x3, x4
             W_fc1 = self.weight_varible([s[1]*s[2]*s[3], self.output_size])
             b_fc1 = self.bias_variable([self.output_size])
