@@ -14,10 +14,10 @@ import pandas as pd
 from skimage import feature
 #from cnn_util import *
 
-raw_image_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+# raw_image_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+# input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
+raw_image_path = '/media/lcc/Windows/Downloads/SSRL_SKY/'
 input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
-#raw_image_path = '/media/lcc/Windows/Downloads/SSRL_SKY/'
-#input_data_path = '/home/lcc/code/python/SolarPrediction/dataset/NREL_SSRL_BMS_SKY_CAM/input_data/'
 year = range(1999, 2017)
 def preprocess_frame(image, target_height=224, target_width=224):
 
@@ -43,14 +43,13 @@ def preprocess_frame(image, target_height=224, target_width=224):
 
     return cv2.resize(resized_image, (target_height, target_width))
 
-def pad_data(method, feat_size, feat=None):
+def pad_data(method, feat_size):
     new_data = []
     start_day = '20080101'
     end_day = '20160731'
     day_list = np.loadtxt('day_list.csv', dtype='str')
     date = np.loadtxt('exist_image_list.csv', dtype='str')
-	if feat == None
-    	feat = np.loadtxt(input_data_path + 'raw_' + method + '_' + str(feat_size) + '.csv', delimiter=',')
+    feat = np.loadtxt(input_data_path + 'raw_' + method + '_' + str(feat_size) + '.csv', dtype='float')
     #data = np.loadtxt(path + method + '.csv', delimiter=',',dtype='str')
     #date = [str(int(float(i))) for i in data[:,0]]
     #feat = np.array(data[:,1:], dtype = 'float')
@@ -106,6 +105,59 @@ def pad_data(method, feat_size, feat=None):
     print new_data.shape
     np.savetxt(input_data_path + method + '_' + str(feat_size) + '.csv', new_data, fmt='%.4f',delimiter=',')
 
+def pad_data_image_path():
+    new_data = []
+    start_day = '20080101'
+    end_day = '20160731'
+    day_list = np.loadtxt('day_list.csv', dtype='str')
+    date = np.loadtxt('exist_image_list.csv', dtype='str')
+    print date
+    print day_list
+    idx = 0
+    for day in day_list:
+        hours = range(0,24)
+        for hour in hours[:5]:
+            if hour < 10:
+                day_hour = day + '0' + str(hour) + '00'
+            else:
+                day_hour = day + str(hour) + '00'
+            if day_hour < start_day:
+                continue
+            if day > end_day:
+                break
+            new_data.append([-11111])
+        for hour in hours[5:-4]:
+            if hour < 10:
+                day_hour = day + '0' + str(hour) + '00'
+            else:
+                day_hour = day +  str(hour) + '00'
+            if day_hour < start_day:
+                continue
+            if day > end_day:
+                break
+            print 'Day_Hour:', day_hour
+            print 'Idx:', idx
+            print date[idx]
+            while date[idx] < day_hour:
+                idx += 1
+            if date[idx] == day_hour:
+                new_data.append([int(date[idx])])
+            else:
+                new_data.append([-99999])
+        for hour in hours[-4:]:
+            if hour < 10:
+                day_hour = day + '0' + str(hour) + '00'
+            else:
+                day_hour = day + str(hour) + '00'
+            if day_hour < start_day:
+                continue
+            if day > end_day:
+                break
+            new_data.append([-11111])
+
+    new_data = np.array(new_data)
+    print new_data.shape
+    np.savetxt('pad_data_path.csv', new_data, fmt='%12.0f', delimiter=',')
 # def prerain_CNN():
 #     vgg_model = '/home/lcc/caffe/models/bvlc_reference_rcnn_ilsvrc13/bvlc_reference_rcnn_ilsvrc13.caffemodel'
 #     vgg_deploy = '/home/lcc/caffe/models/bvlc_reference_rcnn_ilsvrc13/deploy.prototxt'
@@ -235,15 +287,13 @@ def get_feature(method):
     feat_list = np.array(feat_list)
     print feat_list.shape
 
-    np.savetxt(input_data_path + 'raw_' + method + '_' + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",", fmt = '%.4f')
-    pad_data(method, feat_list.shape[1], feat_list)
-	#np.savetxt('exist_image_list.csv', feat_list, delimiter=',',fmt = '%12.0f')
+    #np.savetxt(input_data_path + 'raw_' + method + '_' + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",", fmt = '%.4f')
+    #np.savetxt('input_data_path.csv', feat_list, delimiter=',',fmt = '%12.0f')
 
-
-if __name__=="__main__":
+if __name__== '__main__':
+    pad_data_image_path()
     #pad_data()
-   get_feature('LBPco	')
-   pad_data(method = 'HOG', feat_size = 3780)
+   #get_feature('exist_image')
    # img = cv2.imread(raw_image_path + '2016/01/01/201601011000.jpg')
    # fea = Dense_sift(img)
    # print len(fea)
