@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import csv
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import cross_val_score
 from sklearn.metrics import mean_squared_error
 def all_day():
     years = [str(i) for i in range(1999, 2017)]
@@ -116,18 +115,21 @@ def ir_mean(start_time = '201201010000', end_time = '201401010000', col = 5):
     plt.show()
 
 def feature_importance():
-    X = np.loadtxt('NREL_SSRL_BMS_IRANDMETE/input_data/ir_data.csv', delimiter=',')
-    y = np.loadtxt('NREL_SSRL_BMS_IRANDMETE/input_data/target_data.csv', delimiter=',')
-    X_train, X_test = X[:70000], X[70000:]
-    y_train, y_test = y[:70000], y[70000:]
-    est = RandomForestRegressor(n_estimators=1000, n_jobs=32)
+    X_train = np.loadtxt('NREL_SSRL_BMS_IRANDMETE/input_data/train/ir_train_data.csv', delimiter=',')
+    print 'X_train finished'
+    y_train = np.loadtxt('NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv', delimiter=',')
+    print 'y_train finished'
+    X_test = np.loadtxt('NREL_SSRL_BMS_IRANDMETE/input_data/test/ir_test_data.csv', delimiter=',')
+    print 'X_test finished'
+    y_test = np.loadtxt('NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv', delimiter=',')
+    print 'y_test finished'
+    est = RandomForestRegressor(n_estimators=1000, n_jobs=8)
     est = est.fit(X_train, y_train)
     y_predict = est.predict(X_test)
     for i in range(len(X_test)):
         print abs(y_test - y_predict)
     print est.feature_importances_
     print mean_squared_error(y_test, est.predict(X_test))
-
 if __name__ == '__main__':
     #all_day()
     #ir_season_hour()
