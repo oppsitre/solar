@@ -97,45 +97,60 @@ class Model:
             # conv layer-1
             # x = tf.placeholder(tf.float32, [None, 784])
             h_conv1 = tf.nn.relu(self.conv2d(x_image, W_conv1) + b_conv1)
-            h_pool1 = self.max_pool_2x2(h_conv1)
+            #h_pool1 = self.max_pool_2x2(h_conv1)
+
+            axis = list(range(len(h_conv1.get_shape()) - 1))
+            mean, variance = tf.nn.moments(h_conv1, axis)
+            #print mean.get_shape(), variance.get_shape()
+            batch_normal_1 = tf.nn.batch_normalization(h_conv1, mean, variance, None, None, 0.001)
             #return h_pool1
             # print W_conv1.name, W_conv1.get_shape()
             # print b_conv1.name, b_conv1.get_shape()
             # print h_conv1.name, h_conv1.get_shape()
-            # print h_pool1.name, h_pool1.get_shape()
+            #print h_pool1.name, h_pool1.get_shape()
             #
             # print W_conv1.name
             # print b_conv1.name
             # print h_conv1.name
             # print h_pool1.name
+
         with tf.variable_scope('conv_2') as scope:
             # conv layer-2
             W_conv2 = self.weight_varible([5, 5, 32, 64])
             b_conv2 = self.bias_variable([64])
 
-            h_conv2 = tf.nn.relu(self.conv2d(h_pool1, W_conv2) + b_conv2)
-            h_pool2 = self.max_pool_2x2(h_conv2)
+            h_conv2 = tf.nn.relu(self.conv2d(batch_normal_1, W_conv2) + b_conv2)
+            #h_pool2 = self.max_pool_2x2(h_conv2)
 
-            # print W_conv2.name, W_conv2.get_shape()
-            # print b_conv2.name, b_conv2.get_shape()
-            # print h_conv2.name, h_conv2.get_shape()
-            # print h_pool2.name, h_pool2.get_shape()
-            # print 'AAAAAAAAAAAAAAAAAAAAAA'
-            #
-            # # print W_conv2.name, W_conv2.get_shape()
-            # # print b_conv2.name, b_conv2.get_shape()
-            # # print h_conv2.name, h_conv2.get_shape()
-            # # print h_pool2.name, h_pool2.get_shape()
+            axis = list(range(len(h_conv2.get_shape()) - 1))
+            mean, variance = tf.nn.moments(h_conv2, axis)
+            #print mean.get_shape(), variance.get_shape()
+
+            batch_normal_2 = tf.nn.batch_normalization(h_conv2, mean, variance, None, None, 0.001)
+
+        # with tf.variable_scope('conv_3') as scope:
+        #     # conv layer-2
+        #     W_conv3 = self.weight_varible([5, 5, 64, 64])
+        #     b_conv3 = self.bias_variable([64])
+        #
+        #     h_conv3 = tf.nn.relu(self.conv2d(batch_normal_2, W_conv3) + b_conv3)
+        #     h_pool3 = self.max_pool_2x2(h_conv3)
+        #
+        #     axis = list(range(len(h_pool3.get_shape()) - 1))
+        #     mean, variance = tf.nn.moments(h_pool3, axis)
+        #     #print mean.get_shape(), variance.get_shape()
+        #
+        #     batch_normal_3 = tf.nn.batch_normalization(h_pool3, mean, variance, None, None, 0.001)
 
         with tf.variable_scope('fc_1') as scope:
             # full connection
-            s = h_pool2.get_shape().as_list()
-            # print 'X1,X2,X3,X4', x1,x2,x3, x4
+            s = batch_normal_2.get_shape().as_list()
+            print 'X1,X2,X3,X4', s
             W_fc1 = self.weight_varible([s[1]*s[2]*s[3], self.output_size])
             b_fc1 = self.bias_variable([self.output_size])
 
-            h_pool2_flat = tf.reshape(h_pool2, [-1, s[1]*s[2]*s[3]])
-            h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
+            batch_normal_flat = tf.reshape(batch_normal_2, [-1, s[1]*s[2]*s[3]])
+            h_fc1 = tf.nn.relu(tf.matmul(batch_normal_flat, W_fc1) + b_fc1)
 
             # dropout
             h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
@@ -164,7 +179,7 @@ class Model:
                     if cnn_out is None:
                         cnn_out = tmp_out
                     else:
-                        cnn_out = tf.concat(2, tmp_out)
+                        cnn_out = tf.concat(1, [tmp_out,cnn_out])
                     scope.reuse_variables()
                     #print '!!!!!', cnn_out.name, cnn_out.get_shape()
 

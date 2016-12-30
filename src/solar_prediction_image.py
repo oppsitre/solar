@@ -12,18 +12,18 @@ from util import MSE_And_MAE, test_figure_plot
 import sys
 import datetime
 import time
-log_file = open('log_'+ str(int(datetime.datetime.now().microsecond)),'w')
-sys.stdout = log_file
+t = time.strftime('%m%d%H%M',time.localtime(time.time()))
+#log_file = open('log_'+ t,'w')
+#sys.stdout = log_file
 def main(_):
     #get the config
     print time.localtime()
-    fp = open('/home/lcc/code/python/solar/config.json')
+    fp = open('../config.json')
     config = json.load(fp, object_hook=lambda d:namedtuple('X', d.keys())(*d.values()))
     fp.close()
 
     n_step = config.n_step
     n_target = config.n_target
-    n_input_sky_cam = 1000
     width_image = config.width
     height_image = config.heigth
     epoch_size = config.epoch_size
