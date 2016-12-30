@@ -171,6 +171,15 @@ class Reader:
                     #print 'TMMMMMMMMMMMMMP:', tmp.shape
                     img.append(tmp)
             img_list.append(img)
+            mean_noise = 0
+            sigma_noise = 0.01
+            for i in range(128):
+                tmp_img = img
+                noise = np.random.normal(mean_noise, sigma_noise, size=(self.heigth, self.width))
+                rand_idx = np.random.choice(range(0, 72), 2)
+                for j in rand_idx:
+                    tmp_img[j] = tmp_img[j] + noise
+                img_list.append(tmp_img)
         return np.array(img_list)
 
     def next_batch(self):
