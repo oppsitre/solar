@@ -97,12 +97,12 @@ class Model:
             # conv layer-1
             # x = tf.placeholder(tf.float32, [None, 784])
             h_conv1 = tf.nn.relu(self.conv2d(x_image, W_conv1) + b_conv1)
-            #h_pool1 = self.max_pool_2x2(h_conv1)
+            h_pool1 = self.max_pool_2x2(h_conv1)
 
-            axis = list(range(len(h_conv1.get_shape()) - 1))
-            mean, variance = tf.nn.moments(h_conv1, axis)
+            axis = list(range(len(h_pool1.get_shape()) - 1))
+            mean, variance = tf.nn.moments(h_pool1, axis)
             #print mean.get_shape(), variance.get_shape()
-            batch_normal_1 = tf.nn.batch_normalization(h_conv1, mean, variance, None, None, 0.001)
+            batch_normal_1 = tf.nn.batch_normalization(h_pool1, mean, variance, None, None, 0.001)
             #return h_pool1
             # print W_conv1.name, W_conv1.get_shape()
             # print b_conv1.name, b_conv1.get_shape()
@@ -120,13 +120,13 @@ class Model:
             b_conv2 = self.bias_variable([64])
 
             h_conv2 = tf.nn.relu(self.conv2d(batch_normal_1, W_conv2) + b_conv2)
-            #h_pool2 = self.max_pool_2x2(h_conv2)
+            h_pool2 = self.max_pool_2x2(h_conv2)
 
-            axis = list(range(len(h_conv2.get_shape()) - 1))
-            mean, variance = tf.nn.moments(h_conv2, axis)
+            axis = list(range(len(h_pool2.get_shape()) - 1))
+            mean, variance = tf.nn.moments(h_pool2, axis)
             #print mean.get_shape(), variance.get_shape()
 
-            batch_normal_2 = tf.nn.batch_normalization(h_conv2, mean, variance, None, None, 0.001)
+            batch_normal_2 = tf.nn.batch_normalization(h_pool2, mean, variance, None, None, 0.001)
 
         # with tf.variable_scope('conv_3') as scope:
         #     # conv layer-2
@@ -145,7 +145,7 @@ class Model:
         with tf.variable_scope('fc_1') as scope:
             # full connection
             s = batch_normal_2.get_shape().as_list()
-            print 'X1,X2,X3,X4', s
+            #print 'X1,X2,X3,X4', s
             W_fc1 = self.weight_varible([s[1]*s[2]*s[3], self.output_size])
             b_fc1 = self.bias_variable([self.output_size])
 

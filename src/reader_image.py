@@ -3,7 +3,7 @@
 from __future__ import division
 import numpy as np
 import cv2
-
+import random
 HOUR_IN_A_DAY = 24
 MISSING_VALUE = -99999
 
@@ -128,6 +128,9 @@ class Reader:
 
         self.batch_size = config.batch_size
 
+        self.noise_mean = config.noise_mean
+        self.noise_vari = config.noise_vari
+        self.noise_ratio = config.noise_ratio
         # self.index = np.random.random_integers(0, self.train_num-1, size=(self.batch_size))
         #print the dataset info
         print "Dataset info"
@@ -140,7 +143,7 @@ class Reader:
         print "\n\n"
 
 
-    def path2image(self, data, index):
+    def path2image(self, data, index, add_noise):
         mean = cv2.resize(np.load('mean.npy'), (self.heigth, self.width))
         std = cv2.resize(np.load('std.npy'), (self.heigth, self.width))
         img_list = []
@@ -148,38 +151,23 @@ class Reader:
             img = []
             for i in range(self.n_step):
                 if data[idx, i] == -11111:
-                    #print '1'
                     img.append(np.zeros((self.heigth,self.width)))
-                #elif data[idx, i] == -99999:
-                    #print '2'
-                #    img.append(np.ones((self.heigth,self.width)))
                 else:
-                    #print '3'
                     filename = str(int(data[idx, i]))
-                    #print 'lllllllllllllll:', data[idx, i]
                     y = filename[:4]
                     m = filename[4:6]
                     d = filename[6:8]
-                    #h = filename[8:]
-                    #print filename, y, m, d, h
                     path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
-                    #/ home / lcc / code / python / SolarPrediction / dataset / NREL_SSRL_BMS_SKY_CAM / SSRL_SKY / 2008 / 01 / 01
-                    #print 'path:', path
                     tmp = cv2.resize(cv2.imread(path, 0), (self.heigth, self.width)).astype('float')
                     tmp -= mean
                     tmp /= std
-                    #print 'TMMMMMMMMMMMMMP:', tmp.shape
+                    mean_noise = self.noise_mean
+                    sigma_noise = self.noise_vari
+                    noise = np.random.normal(mean_noise, sigma_noise, size=(self.heigth, self.width))
+                    if add_noise is True and random.random() < self.noise_ratio:
+                        tmp += noise
                     img.append(tmp)
             img_list.append(img)
-            mean_noise = 0
-            sigma_noise = 0.01
-            for i in range(128):
-                tmp_img = img
-                noise = np.random.normal(mean_noise, sigma_noise, size=(self.heigth, self.width))
-                rand_idx = np.random.choice(range(0, 72), 2)
-                for j in rand_idx:
-                    tmp_img[j] = tmp_img[j] + noise
-                img_list.append(tmp_img)
         return np.array(img_list)
 
     def next_batch(self):
@@ -190,22 +178,7 @@ class Reader:
         @return target_data_batch: [n_model, batch_size, n_target]
         """
         index = np.random.choice(self.train_index, self.batch_size)
-
-        # img_list = []
-        # for idx in index:
-        #     img = []
-        #     for i in idx:
-        #         if self.sky_cam_train_data[idx, i] == -11111:
-        #             img.append(np.zeros(90,100))
-        #         else:
-        #             filename = str(int(self.sky_cam_train_data[idx, i]))
-        #             y = filename[:4]
-        #             m = filename[4:6]
-        #             d = filename[6:8]
-        #             h = filename[8:]
-        #             img.append(cv2.imread(sky_cam_raw_data_path + y + '/' + m + '/' + d + '/' + h + '/' + filename), 0)
-        #     img_list.append(img)
-        sky_cam_batch_data = self.path2image(self.sky_cam_train_data, index)
+        sky_cam_batch_data = self.path2image(self.sky_cam_train_data, index, True)
         #print '!!!!!!!!!!!!!!!!!!!!!!sky_cam_batch_data.shape:', sky_cam_batch_data.shape
         target_batch_data = self.target_train_data[index]
 
@@ -229,7 +202,7 @@ class Reader:
         """
         index = np.random.choice(self.validation_index, self.validataion_num)
 
-        return self.path2image(self.sky_cam_validation_data, index), self.target_validation_data[0:self.validataion_num]
+        return self.path2image(self.sky_cam_validation_data, index, False), self.target_validation_data[0:self.validataion_num]
         # return self.sky_cam_validation_data[0:self.validataion_num], \
         #         self.target_validation_data[0:self.validataion_num]
 
@@ -241,6 +214,6 @@ class Reader:
         #a = self.path2image(self.sky_cam_test_data, range(test_num))
         index = np.random.choice(self.test_index, test_num)
         #print 'AAAAAAAAAAAAAAAAAAAAAA.shape', a.shape
-        return self.path2image(self.sky_cam_test_data, index), self.target_test_data[0:test_num]
+        return self.path2image(self.sky_cam_test_data, index, False), self.target_test_data[0:test_num]
         # return self.sky_cam_test_data[0:test_num], \
         #         self.target_test_data[0:test_num]
