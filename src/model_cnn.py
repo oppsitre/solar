@@ -248,6 +248,6 @@ class Model:
         Define the optimizer of the model used to train the model
         """
         if self._optimize is None:
-            optimizer = tf.train.AdamOptimizer(self.lr)
+            optimizer = tf.train.MomentumOptimizer(self.lr,0.9)
             self._optimize = optimizer.minimize(self.loss)
         return self._optimize

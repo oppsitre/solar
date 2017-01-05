@@ -7,7 +7,7 @@
     "train_prop" : 0.950,
     "validation_prop":0.025,
 
-    "batch_size" : 100,
+    "batch_size" : 4,
     "n_step" : 72,
     "h_ahead" : 9,
     "n_target" : 1,
@@ -19,21 +19,25 @@
 
     "data_step" : 24,
 
-    "epoch_size" : 3000,
+    "epoch_size" : 10000,
     "print_step" : 10,
     "test_step" : 10,
 
     "n_first_hidden" : 1024,
     "n_second_hidden" : 4096,
-    "n_third_hidden" : 4096,
-    "n_hidden_level2" : 8192,
+    "n_third_hidden" : 1024,
+    "n_hidden_level2" : 1024,
     "n_fully_connect_hidden": 2048,
 
     "width": 64,
     "heigth": 64,
-    "cnn_feat_size": 128,
+    "cnn_feat_size": 1024,
 
     "test_num" : 70,
+
+    "noise_mean": 0.0,
+    "noise_vari": 0.01,
+    "noise_ratio": 0.05,
 
     "model_path" : "model.ckpt"
 }

@@ -13,8 +13,8 @@ import sys
 import datetime
 import time
 t = time.strftime('%m%d%H%M',time.localtime(time.time()))
-#log_file = open('log_'+ t,'w')
-#sys.stdout = log_file
+log_file = open('log_'+ t,'w')
+sys.stdout = log_file
 def main(_):
     #get the config
     print time.localtime()
