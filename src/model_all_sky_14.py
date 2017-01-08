@@ -91,7 +91,6 @@ class Model:
             # regression
             w_fc1 = tf.Variable(tf.truncated_normal([12, self.n_fully_connect_hidden]), dtype=tf.float32)
             b_fc1 = tf.Variable(tf.constant(0.1, shape=[self.n_fully_connect_hidden]), dtype=tf.float32)
-            print type(self.data)
             h_fc1 = tf.nn.relu(tf.matmul(self.image_data, w_fc1) + b_fc1)
 
             # h_fc_drop = tf.nn.dropout(h_fc1, self.keep_prob)

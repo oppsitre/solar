@@ -292,8 +292,8 @@ def get_feature(method):
 def all_sky_image_features(img_lst):
     res = []
     img_lst_gray = []
+    idx = 0
     for img in img_lst:
-        print type(img), img.shape
         img_lst_gray.append(cv2.cvtColor(img, cv2.COLOR_BGR2GRAY))
 
     '''
@@ -314,8 +314,11 @@ def all_sky_image_features(img_lst):
     DA = []; DC = []; Thr_DF = 0.1
     for i in range(len(img_lst)):
         if i == 0: continue
-        DA.append([abs(i) if abs(i) > Thr_DF else 0 for i in (img_lst[i].ravel() - img_lst[i - 1].ravel())])
-        DC.append([1 if abs(i) > Thr_DF else 0 for i in (img_lst[i].ravel() - img_lst[i - 1].ravel())])
+        dif = (img_lst[i].ravel() - img_lst[i - 1].ravel())
+        tmp = [abs(i) if abs(i) > Thr_DF else 0 for i in dif]
+        DA.append(np.sum(tmp))
+        tmp = [1 if abs(i) > Thr_DF else 0 for i in dif]
+        DC.append(np.sum(tmp))
     res.append(np.mean(DA))
     res.append(np.mean(DC))
     res.append(np.var(DA))

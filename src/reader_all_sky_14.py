@@ -21,7 +21,7 @@ sky_cam_test_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_c
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
 #sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
-sky_cam_raw_data_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
 
 class Reader:
 
@@ -155,13 +155,17 @@ class Reader:
             imgs = []
             for i in range(self.n_step):
                 if data[idx, i] == -11111:
-                    imgs.append(np.zeros((self.heigth,self.width, 3), dtype='int'))
+                    imgs.append(np.zeros((self.heigth,self.width, 3), dtype='uint8'))
                 else:
                     filename = str(int(data[idx, i]))
                     y = filename[:4]
                     m = filename[4:6]
                     d = filename[6:8]
                     path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
+                    #tt = cv2.imread(path)
+                    #print i, filename, tt.dtype
+                    #cv2.imshow(filename, tt)
+                    #cv2.waitKey(0)
                     tmp = cv2.resize(cv2.imread(path), (self.heigth, self.width))
                     # if image_scale is True:
                     #     tmp -= mean
@@ -186,7 +190,6 @@ class Reader:
         batch_images = self.path2image(self.sky_cam_train_data, index)
         sky_cam_batch_data = []
         for batch in batch_images:
-            print 'Train batch:', batch.shape
             sky_cam_batch_data.append(all_sky_image_features(batch))
         sky_cam_batch_data = np.array(sky_cam_batch_data)
         #print '!!!!!!!!!!!!!!!!!!!!!!sky_cam_batch_data.shape:', sky_cam_batch_data.shape
@@ -214,7 +217,6 @@ class Reader:
         batch_images = self.path2image(self.sky_cam_validation_data, index)
         sky_cam_validation_batch_data = []
         for batch in batch_images:
-            print 'Validation batch:', batch.shape
             sky_cam_validation_batch_data.append(all_sky_image_features(batch))
         sky_cam_validation_batch_data = np.array(sky_cam_validation_batch_data)
 
@@ -233,7 +235,6 @@ class Reader:
         batch_images = self.path2image(self.sky_cam_test_data, index)
         sky_cam_test_batch_data = []
         for batch in batch_images:
-            print 'Test batch:', batch.shape
             sky_cam_test_batch_data.append(all_sky_image_features(batch))
         sky_cam_test_batch_data = np.array(sky_cam_test_batch_data)
         #print 'AAAAAAAAAAAAAAAAAAAAAA.shape', a.shape
