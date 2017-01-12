@@ -12,6 +12,10 @@ import ipdb
 import numpy as np
 import pandas as pd
 from skimage import feature
+import scipy
+import math
+from sklearn.ensemble import RandomForestRegressor as rf
+from sklearn.metrics import mean_squared_error
 #from cnn_util import *
 
 # raw_image_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
@@ -261,6 +265,7 @@ def LBP_feature(img, numPoints = 24, radius = 8):
     hist = desc.describe(gray)
     #print hist.shape
     return hist.tolist()
+
 def get_feature(method):
     feat_list = []
     for y in year:
@@ -371,10 +376,144 @@ def all_sky_image_features(img_lst):
 
     return res
 
+def automatic_cloud(img):
+    b, g, r = cv2.split(img)
+    '''
+    Spectral feature
+    '''
+    #Mean(R and B)
+    ME_r = np.mean(r.ravel())
+    ME_b = np.mean(b.ravel())
+    ME_g = np.mean(g.ravel())
+
+
+    #Standard deviation(B)
+    SD_b = np.std(b.ravel())
+
+    #Skewness(B)
+    SK_b = scipy.stats.skew(b.ravel())
+
+    #Difference(R-G, R-B and G-B)
+    D_rb = ME_r - ME_b
+    D_rg = ME_r - ME_g
+    D_gb = ME_g - ME_b
+
+    '''
+    Textural features(Based on GCLM)
+    '''
+    gclm = gclm_matrix(img)
+    #Engergy(B)
+    EN_b = np.sum(gclm.ravel())
+
+    #Entropy(B)
+    ENT_b = 0
+    for i in gclm.ravel():
+        if i <= 0.0: continue
+        ENT_b += i * math.log(i,2)
+
+    #Contrast(B)
+    CON_b = 0
+    for i in range(256):
+        for j in range(256):
+            CON_b += (i-j)**2 * gclm[i,j]
+
+    #Homogenity(B)
+    HOM_b = 0
+    for i in range(256):
+        for j in range(256):
+            HOM_b += gclm[i,j] / (1 + abs(i-j))
+
+    res = [ME_r,ME_g, ME_b, SD_b, SK_b, D_gb, D_rb, D_rg, EN_b, ENT_b, CON_b, HOM_b]
+
+    return res
+
+def gclm_matrix(img):
+    if len(img.shape) > 2:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    gclm = feature.greycomatrix(img,[2],[np.pi/4, 3*np.pi/4, 5*np.pi/4, 7*np.pi/4])
+    m = None
+    for i in range(4):
+        if m is None:
+            m = gclm[:,:,0,i]
+        m = gclm[:,:,0,i] + m
+    m = np.true_divide(m, 4)
+    return m
+
+
+def name2path(root_dir, filename):
+    y = filename[:4]
+    m = filename[4:6]
+    d = filename[6:8]
+    path = root_dir + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
+    return path
+
+def path2image(self, data, index, add_noise = False, image_scale = False):
+    mean = cv2.resize(np.load('mean.npy'), (self.heigth, self.width))
+    std = cv2.resize(np.load('std.npy'), (self.heigth, self.width))
+    img_list = []
+    for idx in index:
+        imgs = []
+        for i in range(self.n_step):
+            if data[idx, i] == -11111:
+                imgs.append(np.zeros((self.heigth,self.width, 3), dtype='uint8'))
+            else:
+                filename = str(int(data[idx, i]))
+                y = filename[:4]
+                m = filename[4:6]
+                d = filename[6:8]
+                path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
+                #tt = cv2.imread(path)
+                #print i, filename, tt.dtype
+                #cv2.imshow(filename, tt)
+                #cv2.waitKey(0)
+                tmp = cv2.resize(cv2.imread(path), (self.heigth, self.width))
+                # if image_scale is True:
+                #     tmp -= mean
+                #     tmp /= std
+                # mean_noise = self.noise_mean
+                # sigma_noise = self.noise_vari
+                # noise = np.random.normal(mean_noise, sigma_noise, size=(self.heigth, self.width))
+                # if add_noise is True and random.random() < self.noise_ratio:
+                #     tmp += noise
+                imgs.append(tmp)
+        img_list.append(imgs)
+    return np.array(img_list)
+
 if __name__== '__main__':
-    pad_data_image_path()
-    #pad_data()
-   #get_feature('exist_image')
-   # img = cv2.imread(raw_image_path + '2016/01/01/201601011000.jpg')
-   # fea = Dense_sift(img)
-   # print len(fea)
+    sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
+    X_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv', dtype='float', delimiter=',')
+
+    y_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv', dtype='float', delimiter=',')
+
+    X_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv', dtype='float', delimiter=',')
+    y_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv', dtype='float', delimiter=',')
+
+    X_train = []
+    y_train = []
+    for i in range(len(X_train_path)):
+        filename = str(int(X_train_path[i]))
+        #print 'filename:', filename, type(filename)
+        # print (filename == '-11111')
+        if filename == '-11111' or filename == '-99999':
+            continue
+        path = name2path(sky_cam_raw_data_path, filename)
+        print path
+        img = cv2.imread(path)
+        #cv2.imshow(path, img)
+        #cv2.waitKey(0)
+        X_train.append(automatic_cloud(img))
+        y_train.append(y_train_path[i])
+
+    X_test = []
+    y_test = []
+    for i in range(len(X_test_path)):
+        filename = str(int(X_test_path[i]))
+        if filename is '-11111' or filename is '-99999':
+            continue
+        path = name2path(sky_cam_raw_data_path, filename)
+        img = cv2.imread(path)
+        X_train.append(automatic_cloud(img))
+        y_train.append(y_test_path[i])
+
+    est = rf(n_estimators = 1000, n_jobs = 4).fit(X_train, y_train)
+    print mean_squared_error(y_test, est.predict(X_test))
