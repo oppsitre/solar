@@ -43,7 +43,7 @@ def main(_):
     prediction = model.prediction
     loss = model.loss
     optimize = model.optimize
-
+    tf.initialize_all_variables().run()
     #new a saver to save the model
     saver = tf.train.Saver()
 
@@ -51,8 +51,9 @@ def main(_):
     print config.test_step
     with tf.Session() as sess:
         # initialize all variables
-        tf.initialize_all_variables().run()
 
+        save_path = 'cnn_model.ckpt'
+        saver.restore(sess, save_path)
         for i in range(epoch_size):
             print 'Epoch:', i
 
@@ -92,6 +93,9 @@ def main(_):
             #compare the validation with the last loss
             if(validation_loss < validation_last_loss):
                 validation_last_loss = validation_loss
+
+            sp = saver.save(sess, save_path)
+            print("Model saved in file: %s" % sp)
             # else:
             #     # break
             #     print "break"
