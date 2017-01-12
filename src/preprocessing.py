@@ -8,7 +8,6 @@ import sys
 sys.path.append('/usr/local/lib/python2.7/dist-packages')
 import cv2
 import os
-import ipdb
 import numpy as np
 import pandas as pd
 from skimage import feature
@@ -16,6 +15,7 @@ import scipy
 import math
 from sklearn.ensemble import RandomForestRegressor as rf
 from sklearn.metrics import mean_squared_error
+import multiprocessing
 #from cnn_util import *
 
 # raw_image_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
@@ -294,6 +294,30 @@ def get_feature(method):
 
     #np.savetxt(input_data_path + 'raw_' + method + '_' + str(feat_list.shape[1]) + '.csv', feat_list, delimiter=",", fmt = '%.4f')
     #np.savetxt('input_data_path.csv', feat_list, delimiter=',',fmt = '%12.0f')
+
+def num_cloud_pixel(img):
+    Thr_NC = 0.8
+    b, g, r = cv2.split(img)
+    RBR = np.true_divide(r, b + 0.001)
+    return np.sum([1 if i > Thr_NC else 0 for i in RBR.ravel()])
+
+def gradient_magnitude(img):
+    if len(img.shape) > 2:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    dst = cv2.Sobel(img, -1, 1, 1)
+    return np.sum(dst.ravel())
+
+def intensity_level(img):
+    if len(img.shape) > 2:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    return np.mean(img.ravel())
+
+def num_corner(img):
+    if len(img.shape) > 2:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    dst = cv2.cornerHarris(img, 7, 7, 0.04)
+    return np.sum([1 if i > (0.1 * dst.max()) else 0 for i in dst.ravel()])
+
 def all_sky_image_features(img_lst):
     res = []
     img_lst_gray = []
@@ -423,9 +447,9 @@ def automatic_cloud(img):
         for j in range(256):
             HOM_b += gclm[i,j] / (1 + abs(i-j))
 
-    res = [ME_r,ME_g, ME_b, SD_b, SK_b, D_gb, D_rb, D_rg, EN_b, ENT_b, CON_b, HOM_b]
-    print res
-    return img
+    res = [ME_r,ME_g, ME_b, SD_b, SK_b, D_gb, D_rb, D_rg, EN_b, ENT_b, CON_b, HOM_b, num_cloud_pixel(img), num_corner(img), intensity_level(img), gradient_magnitude(img)]
+    #print res
+    return res
 
 def gclm_matrix(img):
     if len(img.shape) > 2:
@@ -479,62 +503,69 @@ def path2image(self, data, index, add_noise = False, image_scale = False):
         img_list.append(imgs)
     #print img_list
     return np.array(img_list)
-import multiprocessing
-if __name__== '__main__':
+
+def main():
+    X_train = np.load('automatic_cloud_X_train.npy')
+    #print X_train
+    img = cv2.imread('../1.jpg')
+    print intensity_level(img)
+if __name__ == '__main__':
+    #main()
     sky_cam_raw_data_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+    sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
     X_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv', dtype='float', delimiter=',')
 
     y_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv', dtype='float', delimiter=',')
 
     X_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv', dtype='float', delimiter=',')
     y_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv', dtype='float', delimiter=',')
-    pool = multiprocessing.Pool(processes=50)
+    pool = multiprocessing.Pool(processes=8)
+    result = []
     X_train = []
     y_train = []
-    result = []
-    for i in range(len(X_train_path)):
+    for i in range(len(X_train_path)) :
         filename = str(int(X_train_path[i]))
         if filename == '-11111' or filename == '-99999':
             continue
         path = name2path(sky_cam_raw_data_path, filename)
         print path
         img = cv2.imread(path)
-        #X_train.append(automatic_cloud(img))
-        result.append(pool.apply_async(automatic_cloud, (img,)))
+        result.append(pool.apply_async(automatic_cloud,(img,)))
         y_train.append(y_train_path[i])
-
-    #result = []
-    # X_test = []
-    # y_test = []
-    # for i in range(len(X_test_path)):
-    #     filename = str(int(X_test_path[i]))
-    #     if filename is '-11111' or filename is '-99999':
-    #         continue
-    #     path = name2path(sky_cam_raw_data_path, filename)
-    #     img = cv2.imread(path)
-    #     result.append(pool.apply_async(automatic_cloud, (img,)))
-    #     #X_train.append(automatic_cloud(img))
-    #     y_test.append(y_test_path[i])
+    X_test = []
+    y_test = []
+    print 'Test'
+    for i in range(len(X_test_path)):
+        filename = str(int(X_test_path[i]))
+        if filename == '-11111' or filename == '-99999':
+            continue
+        path = name2path(sky_cam_raw_data_path, filename)
+        img = cv2.imread(path)
+        print 'Test' + path
+        result.append(pool.apply_async(automatic_cloud, (img,)))
+        y_test.append(y_test_path[i])
 
     pool.close()
     pool.join()
     idx = 0
     for res in result:
-        if idx < len(X_train_path):
+        print 'Idx:', idx
+        if idx < len(y_train):
+            print res.get()
             X_train.append(res.get())
         else:
             X_test.append(res.get())
         idx += 1
-
-
-    # for i in range(len(X_train_path) + len(X_test_path)):
-    #     if i < len(X_train_path):
-    #         X_train.append()
-    # for res in result:
-    #     X_test.append(res.get())
+    X_train = np.array(X_train)
+    y_train = np.array(y_train)
+    X_test = np.array(X_test)
+    y_test = np.array(y_test)
+    print X_train.shape, y_train.shape
+    print X_test.shape, y_test.shape
     np.save('automatic_cloud_X_train', X_train)
     np.save('automatic_cloud_X_test', X_test)
     np.save('automatic_cloud_y_train', y_train)
-    np.save('automatic_cloud_y_test', y_tests)
-    est = rf(n_estimators = 1000, n_jobs = 4).fit(X_train, y_train)
+    np.save('automatic_cloud_y_test', y_test)
+    est = rf(n_estimators = 1000, n_jobs = 8).fit(X_train, y_train)
     print mean_squared_error(y_test, est.predict(X_test))
+    print est.feature_importances_
