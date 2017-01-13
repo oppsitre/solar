@@ -148,8 +148,6 @@ class Reader:
         m = filename[4:6]
         d = filename[6:8]
         path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
-        return path
-
     def path2image(self, data, index, add_noise):
         mean = cv2.resize(np.load('mean.npy'), (self.heigth, self.width))
         std = cv2.resize(np.load('std.npy'), (self.heigth, self.width))
@@ -161,7 +159,8 @@ class Reader:
                     img.append(np.zeros((self.heigth,self.width)))
                 else:
                     filename = str(int(data[idx, i]))
-                    path = name2path(filename)
+
+                    path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
                     tmp = cv2.resize(cv2.imread(path, 0), (self.heigth, self.width)).astype('float')
                     tmp -= mean
                     tmp /= std

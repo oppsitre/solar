@@ -13,8 +13,8 @@ import sys
 import datetime
 import time
 t = time.strftime('%m%d%H%M',time.localtime(time.time()))
-log_file = open('all_sky_log_'+ t,'w')
-sys.stdout = log_file
+#log_file = open('all_sky_log_'+ t,'w')
+#sys.stdout = log_file
 
 def main():
     #get the config
@@ -43,18 +43,19 @@ def main():
     model = Model([x_sky_cam], y_, keep_prob, config)
     prediction = model.prediction
     loss = model.loss
-    optimize = model.optimizel
-    validation_last_loss = float('inf')
-    tf.initialize_all_variables().run()
-    #new a saver to save the mode
+    optimize = model.optimize
+
+    #new a saver to save the model
     saver = tf.train.Saver()
-    #print NUM_THREADS
-    with tf.Session(config = tf.ConfigProto(gpu_options=tf.GPUOptions(visible_device_list='3'))) as sess:
+
+    validation_last_loss = float('inf')
+
+    with tf.Session(config=tf.ConfigProto(intra_op_parallelism_threads=60)) as sess:
     #with tf.Session() as sess:
 
         # initialize all variables
-        save_path = 'all_sky_model.ckpt'
-        saver.restore(sess, save_path)
+        tf.initialize_all_variables().run()
+
         for i in range(epoch_size):
             print 'Epoch:', i
 
@@ -96,9 +97,6 @@ def main():
             #compare the validation with the last loss
             if(validation_loss < validation_last_loss):
                 validation_last_loss = validation_loss
-
-            sp = saver.save(sess, save_path)
-            print("Model saved in file: %s" % sp)
             # else:
             #     # break
             #     print "break"

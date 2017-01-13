@@ -504,68 +504,89 @@ def path2image(self, data, index, add_noise = False, image_scale = False):
     #print img_list
     return np.array(img_list)
 
-def main():
-    X_train = np.load('automatic_cloud_X_train.npy')
-    #print X_train
-    img = cv2.imread('../1.jpg')
-    print intensity_level(img)
-if __name__ == '__main__':
-    #main()
-    sky_cam_raw_data_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+def feature_extraction(X_path):
     sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
-    X_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv', dtype='float', delimiter=',')
-
-    y_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv', dtype='float', delimiter=',')
-
-    X_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv', dtype='float', delimiter=',')
-    y_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv', dtype='float', delimiter=',')
     pool = multiprocessing.Pool(processes=8)
     result = []
-    X_train = []
-    y_train = []
-    for i in range(len(X_train_path)) :
-        filename = str(int(X_train_path[i]))
-        if filename == '-11111' or filename == '-99999':
-            continue
-        path = name2path(sky_cam_raw_data_path, filename)
-        print path
-        img = cv2.imread(path)
-        result.append(pool.apply_async(automatic_cloud,(img,)))
-        y_train.append(y_train_path[i])
-    X_test = []
-    y_test = []
-    print 'Test'
-    for i in range(len(X_test_path)):
-        filename = str(int(X_test_path[i]))
-        if filename == '-11111' or filename == '-99999':
-            continue
-        path = name2path(sky_cam_raw_data_path, filename)
-        img = cv2.imread(path)
-        print 'Test' + path
-        result.append(pool.apply_async(automatic_cloud, (img,)))
-        y_test.append(y_test_path[i])
+    X = []
+    for i in range(len(X_path)) :
+        filename = str(int(X_path[i]))
+        if filename == '-11111':
+            result.append([0]*16)
+        elif filename == '-99999':
+            result.append([-99999]*16)
+        else:
+            path = name2path(sky_cam_raw_data_path, filename)
+            print path
+            img = cv2.imread(path)
+            result.append(pool.apply_async(automatic_cloud,(img,)))
 
     pool.close()
     pool.join()
-    idx = 0
+    print result
     for res in result:
-        print 'Idx:', idx
-        if idx < len(y_train):
-            print res.get()
-            X_train.append(res.get())
+        if isinstance(res,(list)) is True:
+            X.append(res)
         else:
-            X_test.append(res.get())
-        idx += 1
-    X_train = np.array(X_train)
-    y_train = np.array(y_train)
-    X_test = np.array(X_test)
-    y_test = np.array(y_test)
-    print X_train.shape, y_train.shape
-    print X_test.shape, y_test.shape
+            X.append(res.get())
+    X = np.array(X)
+    return X
+
+if __name__ == '__main__':
+    X_validation_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/validation/sky_cam_validation_data.csv', dtype='float', delimiter=',')
+    X_validation = feature_extraction(X_validation_path)
+    np.save('automatic_cloud_X_validation', X_validation)
+
+    X_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv', dtype='float', delimiter=',')
+    X_train = feature_extraction(X_train_path)
     np.save('automatic_cloud_X_train', X_train)
+
+    X_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv', dtype='float', delimiter=',')
+    X_test = feature_extraction(X_test_path)
     np.save('automatic_cloud_X_test', X_test)
-    np.save('automatic_cloud_y_train', y_train)
-    np.save('automatic_cloud_y_test', y_test)
-    est = rf(n_estimators = 1000, n_jobs = 8).fit(X_train, y_train)
-    print mean_squared_error(y_test, est.predict(X_test))
-    print est.feature_importances_
+
+    #sky_cam_raw_data_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+    # X_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/train/sky_cam_train_data.csv', dtype='float', delimiter=',')
+    #
+    # y_train_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/train/target_train_data.csv', dtype='float', delimiter=',')
+    #
+    # X_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv', dtype='float', delimiter=',')
+    # y_test_path = np.loadtxt('../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv', dtype='float', delimiter=',')
+
+
+    # X_test = []
+    # y_test = []
+    # print 'Test'
+    # for i in range(len(X_test_path)):
+    #     filename = str(int(X_test_path[i]))
+    #     if filename == '-11111' or filename == '-99999':
+    #         continue
+    #     path = name2path(sky_cam_raw_data_path, filename)
+    #     img = cv2.imread(path)
+    #     print 'Test' + path
+    #     result.append(pool.apply_async(automatic_cloud, (img,)))
+    #     y_test.append(y_test_path[i])
+
+
+    # for res in result:
+    #     print 'Idx:', idx
+    #     if idx < len(y_train):
+    #         print res.get()
+    #         X_train.append(res.get())
+    #     else:
+    #         X_test.append(res.get())
+    #     idx += 1
+    # X_train = np.array(X_train)
+    # y_train = np.array(y_train)
+    # X_test = np.array(X_test)
+    # y_test = np.array(y_test)
+    # print X_train.shape, y_train.shape
+    # print X_test.shape, y_test.shape
+
+    # np.save('automatic_cloud_X_train', X_train)
+    # np.save('automatic_cloud_X_test', X_test)
+    # np.save('automatic_cloud_y_train', y_train)
+    # np.save('automatic_cloud_y_test', y_test)
+    # est = rf(n_estimators = 1000, n_jobs = 8).fit(X_train, y_train)
+    # print mean_squared_error(y_test, est.predict(X_test))
+    # print est.feature_importances_
