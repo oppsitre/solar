@@ -13,7 +13,7 @@ import sys
 import datetime
 import time
 t = time.strftime('%m%d%H%M',time.localtime(time.time()))
-log_file = open('log_'+ t,'w')
+log_file = open('cnn_log_'+ t,'w')
 sys.stdout = log_file
 def main(_):
     #get the config
@@ -43,17 +43,19 @@ def main(_):
     prediction = model.prediction
     loss = model.loss
     optimize = model.optimize
-    tf.initialize_all_variables().run()
+    init_op = tf.global_variables_initializer()
     #new a saver to save the model
     saver = tf.train.Saver()
 
     validation_last_loss = float('inf')
-    print config.test_step
-    with tf.Session() as sess:
+    tensor_config = tf.ConfigProto()
+    tensor_config.gpu_options.allow_growth = True
+    tensor_config.log_device_placement = True
+    with tf.Session(config=tensor_config) as sess:
         # initialize all variables
-
-        save_path = 'cnn_model.ckpt'
-        saver.restore(sess, save_path)
+        sess.run(init_op)
+        save_path = './cnn_model.ckpt'
+        #saver.restore(sess, save_path)
         for i in range(epoch_size):
             print 'Epoch:', i
 

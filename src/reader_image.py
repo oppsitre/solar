@@ -16,8 +16,8 @@ target_validation_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/val
 sky_cam_test_data_path = "../dataset/NREL_SSRL_BMS_SKY_CAM/input_data/test/sky_cam_test_data.csv"
 target_test_data_path = "../dataset/NREL_SSRL_BMS_IRANDMETE/input_data/test/target_test_data.csv"
 
-#sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
-sky_cam_raw_data_path = '/home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
+sky_cam_raw_data_path = '../dataset/NREL_SSRL_BMS_SKY_CAM/SSRL_SKY/'
+#sky_cam_raw_data_path = '../home/lcc/code/data/SSRL_SKY_CAM_IMAGE/'
 
 class Reader:
 
@@ -142,13 +142,7 @@ class Reader:
         print "use", config.n_step, "hours to predict the next ", config.n_target, " consecutive hours"
         print "\n\n"
 
-
-    def name2path(filename):
-        y = filename[:4]
-        m = filename[4:6]
-        d = filename[6:8]
-        path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
-    def path2image(self, data, index, add_noise):
+    def path2image(self, data, index, add_noise = False):
         mean = cv2.resize(np.load('mean.npy'), (self.heigth, self.width))
         std = cv2.resize(np.load('std.npy'), (self.heigth, self.width))
         img_list = []
@@ -159,7 +153,9 @@ class Reader:
                     img.append(np.zeros((self.heigth,self.width)))
                 else:
                     filename = str(int(data[idx, i]))
-
+                    y = filename[:4]
+                    m = filename[4:6]
+                    d = filename[6:8]
                     path = sky_cam_raw_data_path + str(y) + '/' + str(m) + '/' + str(d) + '/' + str(filename) + '.jpg'
                     tmp = cv2.resize(cv2.imread(path, 0), (self.heigth, self.width)).astype('float')
                     tmp -= mean
@@ -181,7 +177,7 @@ class Reader:
         @return target_data_batch: [n_model, batch_size, n_target]
         """
         index = np.random.choice(self.train_index, self.batch_size)
-        sky_cam_batch_data = self.path2image(self.sky_cam_train_data, index, True)
+        sky_cam_batch_data = self.path2image(self.sky_cam_train_data, index)
         #print '!!!!!!!!!!!!!!!!!!!!!!sky_cam_batch_data.shape:', sky_cam_batch_data.shape
         target_batch_data = self.target_train_data[index]
 
