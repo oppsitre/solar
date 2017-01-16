@@ -21,7 +21,7 @@
 
     "epoch_size" : 10000,
     "print_step" : 10,
-    "test_step" : 10,
+    "test_step" : 1,
 
     "n_first_hidden" : 1024,
     "n_second_hidden" : 4096,
@@ -29,9 +29,9 @@
     "n_hidden_level2" : 1024,
     "n_fully_connect_hidden": 2048,
 
-    "width": 64,
-    "heigth": 64,
-    "cnn_feat_size": 1024,
+    "width": 32,
+    "heigth": 32,
+    "cnn_feat_size": 512,
 
     "test_num" : 70,
 

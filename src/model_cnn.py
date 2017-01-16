@@ -71,12 +71,12 @@ class Model:
         self.input_width = config.width
         self.input_height = config.heigth
         self.output_size = config.cnn_feat_size
-        self.fc_1 = 4096
+        self.fc_1 = self.output_size
         self.fc_2 = 1024
 
     def weight_varible(self, shape):
         # initial = tf.truncated_normal(shape, stddev=0.1)
-        weights = tf.get_variable('weights', shape, initializer=tf.random_normal_initializer(0, stddev=5.0))
+        weights = tf.get_variable('weights', shape, initializer=tf.random_normal_initializer(0, stddev=0.1))
         return weights
 
     def bias_variable(self, shape):
@@ -93,7 +93,7 @@ class Model:
     def cnn_model(self, x, keep_prob):
         x_image = tf.reshape(x, [-1, self.input_height, self.input_width, 1])
         with tf.variable_scope('conv_1') as scope:
-            W_conv1 = self.weight_varible([3, 3, 1, 32])
+            W_conv1 = self.weight_varible([5, 5, 1, 32])
             b_conv1 = self.bias_variable([32])
 
             # conv layer-1
@@ -105,15 +105,15 @@ class Model:
             axis = list(range(len(h_pool1.get_shape()) - 1))
             mean, variance = tf.nn.moments(h_pool1, axis)
             #print mean.get_shape(), variance.get_shape()
-            batch_normal = tf.nn.batch_normalization(h_pool1, mean, variance, None, None, 0.001)
+            batch_normal_1 = tf.nn.batch_normalization(h_pool1, mean, variance, None, None, 0.001)
             #return h_pool1
 
         with tf.variable_scope('conv_2') as scope:
             # conv layer-2
-            W_conv2 = self.weight_varible([3, 3, 32, 64])
+            W_conv2 = self.weight_varible([5, 5, 32, 64])
             b_conv2 = self.bias_variable([64])
 
-            h_conv2 = tf.nn.relu(self.conv2d(batch_normal, W_conv2) + b_conv2)
+            h_conv2 = tf.nn.relu(self.conv2d(batch_normal_1, W_conv2) + b_conv2)
             h_pool2 = self.max_pool_2x2(h_conv2)
             #h_pool2 = h_conv2
 
@@ -122,63 +122,78 @@ class Model:
             mean, variance = tf.nn.moments(h_pool2, axis)
             #print mean.get_shape(), variance.get_shape()
 
-            batch_normal = tf.nn.batch_normalization(h_pool2, mean, variance, None, None, 0.001)
+            batch_normal_2 = tf.nn.batch_normalization(h_pool2, mean, variance, None, None, 0.001)
 
-        with tf.variable_scope('conv_3') as scope:
-            # conv layer-2
-            W_conv3 = self.weight_varible([3, 3, 64, 64])
-            b_conv3 = self.bias_variable([64])
+        # with tf.variable_scope('conv_3') as scope:
+        #     # conv layer-2
+        #     W_conv3 = self.weight_varible([4, 4, 64, 64])
+        #     b_conv3 = self.bias_variable([64])
+        #
+        #     h_conv3 = tf.nn.relu(self.conv2d(batch_normal_2, W_conv3) + b_conv3)
+        #     h_pool3 = self.max_pool_2x2(h_conv3)
+        #     #h_pool2 = h_conv2
+        #
+        #     #Batch_Normalization
+        #     axis = list(range(len(h_pool2.get_shape()) - 1))
+        #     mean, variance = tf.nn.moments(h_pool3, axis)
+        #     batch_normal_3 = tf.nn.batch_normalization(h_pool3, mean, variance, None, None, 0.001)
 
-            h_conv3 = tf.nn.relu(self.conv2d(batch_normal, W_conv3) + b_conv3)
-            h_pool3 = self.max_pool_2x2(h_conv3)
-            #h_pool2 = h_conv2
 
-            #Batch_Normalization
-            axis = list(range(len(h_pool2.get_shape()) - 1))
-            mean, variance = tf.nn.moments(h_pool3, axis)
-            batch_normal = tf.nn.batch_normalization(h_pool3, mean, variance, None, None, 0.001)
+        # with tf.variable_scope('conv_4') as scope:
+        #     # conv layer-2
+        #     W_conv4 = self.weight_varible([3, 3, 64, 64])
+        #     b_conv4 = self.bias_variable([64])
+        #
+        #     h_conv4 = tf.nn.relu(self.conv2d(batch_normal_3, W_conv4) + b_conv4)
+        #     h_pool4 = self.max_pool_2x2(h_conv4)
+        #     #h_pool2 = h_conv2
+        #
+        #     #Batch_Normalization
+        #     axis = list(range(len(h_pool3.get_shape()) - 1))
+        #     mean, variance = tf.nn.moments(h_pool4, axis)
+        #     batch_normal_4 = tf.nn.batch_normalization(h_pool4, mean, variance, None, None, 0.001)
 
         with tf.variable_scope('fc_1') as scope:
             # full connection
-            s = batch_normal.get_shape().as_list()
+            s = batch_normal_2.get_shape().as_list()
             #print 'X1,X2,X3,X4', s
             W_fc1 = self.weight_varible([s[1]*s[2]*s[3], self.fc_1])
             b_fc1 = self.bias_variable([self.fc_1])
 
-            batch_normal_flat = tf.reshape(batch_normal, [-1, s[1]*s[2]*s[3]])
+            batch_normal_flat = tf.reshape(batch_normal_2, [-1, s[1]*s[2]*s[3]])
             h_fc1 = tf.nn.relu(tf.matmul(batch_normal_flat, W_fc1) + b_fc1)
 
             #Batch_Normalization
             axis = list(range(len(h_fc1.get_shape()) - 1))
             mean, variance = tf.nn.moments(h_fc1, axis)
-            batch_normal = tf.nn.batch_normalization(h_fc1, mean, variance, None, None, 0.001)
+            batch_normal_fc_1 = tf.nn.batch_normalization(h_fc1, mean, variance, None, None, 0.001)
 
             # dropout
-            h_fc1_drop = tf.nn.dropout(batch_normal, keep_prob)
+            h_fc1_drop = tf.nn.dropout(batch_normal_fc_1, keep_prob)
             #print 'h_fc1_drop:', h_fc1_drop.get_shape()
 
-            #return h_fc1_drop
-        with tf.variable_scope('fc_2') as scope:
-            # full connection
-            #s = batch_normal.get_shape().as_list()
-            #print 'X1,X2,X3,X4', s
-            W_fc2 = self.weight_varible([(h_fc1_drop.get_shape())[1], self.fc_2])
-            b_fc2 = self.bias_variable([self.fc_2])
-
-            h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
-
-            #Batch_Normalization
-            axis = list(range(len(h_fc2.get_shape()) - 1))
-            mean, variance = tf.nn.moments(h_fc2, axis)
-            batch_normal = tf.nn.batch_normalization(h_fc2, mean, variance, None, None, 0.001)
-
-            # dropout
-            h_fc2_drop = tf.nn.dropout(batch_normal, keep_prob)
-            # print W_fc1.name, W_fc1.get_shape()
-            # print b_fc1.name, b_fc1.get_shape()
-            # print h_pool2_flat.name, h_pool2_flat.get_shape()
-            # print h_fc1_drop.name, h_fc1_drop.get_shape()
-            return h_fc2_drop
+            return h_fc1_drop
+        # with tf.variable_scope('fc_2') as scope:
+        #     # full connection
+        #     #s = batch_normal.get_shape().as_list()
+        #     #print 'X1,X2,X3,X4', s
+        #     W_fc2 = self.weight_varible([(h_fc1_drop.get_shape())[1], self.output_size])
+        #     b_fc2 = self.bias_variable([self.output_size])
+        #
+        #     h_fc2 = tf.nn.relu(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+        #
+        #     #Batch_Normalization
+        #     axis = list(range(len(h_fc2.get_shape()) - 1))
+        #     mean, variance = tf.nn.moments(h_fc2, axis)
+        #     batch_normal_fc_2 = tf.nn.batch_normalization(h_fc2, mean, variance, None, None, 0.001)
+        #
+        #     # dropout
+        #     h_fc2_drop = tf.nn.dropout(batch_normal_fc_2, keep_prob)
+        #     # print W_fc1.name, W_fc1.get_shape()
+        #     # print b_fc1.name, b_fc1.get_shape()
+        #     # print h_pool2_flat.name, h_pool2_flat.get_shape()
+        #     # print h_fc1_drop.name, h_fc1_drop.get_shape()
+        #     return h_fc2_drop
     @property
     def prediction(self):
         """
